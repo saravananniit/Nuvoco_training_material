@@ -1,0 +1,290 @@
+tripbuddy_agent_interactive.py
+========================
+"""
+TripBuddy - Menu Driven Version (Unified City Data)
+------------------------------------------------------------
+FIX: Previously city coordinates, city tags, and trip/booking
+status lived in THREE separate dictionaries, all keyed by city
+name. If you added a new city, it was easy to forget to add it
+to one of them -> recommendations or lookups would silently break.
+
+Now there is ONE dictionary: `city_data`, keyed by city name.
+Each city's tuple (coordinates), set (tags), and booking info
+all live together under that one key. This guarantees a city
+and its interests/tags are always properly linked.
+"""
+
+# -------------------------------------------------------
+# LIST -> ordered trip plan (just city names, in order)
+# -------------------------------------------------------
+itinerary = ["Chennai", "Goa", "Jaipur"]
+
+# -------------------------------------------------------
+# DICTIONARY -> single source of truth for every city
+# Each value itself contains a TUPLE (coords) and a SET (tags)
+# -------------------------------------------------------
+city_data = {
+    "Chennai": {
+        "coords": (13.0827, 80.2707),          # TUPLE -> fixed
+        "tags": {"temples", "food"},            # SET -> unique tags
+        "budget": 5000,
+        "booking": None,
+    },
+    "Goa": {
+        "coords": (15.2993, 74.1240),
+        "tags": {"beaches", "nightlife", "seafood"},
+        "budget": 12000,
+        "booking": None,
+    },
+    "Jaipur": {
+        "coords": (26.9124, 75.7873),
+        "tags": {"forts", "shopping", "food"},
+        "budget": 8000,
+        "booking": None,
+    },
+    "Mumbai": {
+        "coords": (19.0760, 72.8777),
+        "tags": {"nightlife", "beaches", "food"},
+        "budget": 10000,
+        "booking": None,
+    },
+}
+
+# SET -> user's own interests (separate from city tags on purpose --
+# these get COMPARED against city_data[city]["tags"] to recommend)
+user_interests = {"beaches", "temples", "food"}
+
+
+# -------------------------------------------------------
+# Helper functions
+# -------------------------------------------------------
+
+def show_itinerary():
+    print("\nCurrent Itinerary (List):", itinerary)
+
+
+def add_city():
+    city = input("Enter city name to add: ").strip().title()
+
+    if city in city_data:
+        # City already known -> just add it to the itinerary
+        if city in itinerary:
+            print(f"{city} is already in your itinerary.")
+        else:
+            itinerary.append(city)
+            print(f"{city} added to itinerary.")
+        return
+
+    # Brand new city -> collect ALL its data together, right here,
+    # so it's never partially set up (this is the fix)
+    print(f"{city} is new. Let's set it up completely.")
+    lat = float(input("Latitude: ").strip())
+    lon = float(input("Longitude: ").strip())
+    tags_input = input("Enter tags for this city (comma separated, e.g. beaches,food): ")
+    tags = {t.strip().lower() for t in tags_input.split(",") if t.strip()}  # SET
+    budget = float(input("Budget for this city: ").strip())
+
+    city_data[city] = {
+        "coords": (lat, lon),      # TUPLE
+        "tags": tags,               # SET
+        "budget": budget,
+        "booking": None,
+    }
+    itinerary.append(city)
+    print(f"{city} fully added with coordinates, tags, and budget.")
+
+
+def remove_city():
+    city = input("Enter city name to remove: ").strip().title()
+    if city in itinerary:
+        itinerary.remove(city)
+        print(f"{city} removed from itinerary.")
+        print("(Its data is kept in memory in case you add it back.)")
+    else:
+        print(f"{city} is not in the itinerary.")
+
+
+def show_coordinates():
+    city = input("Enter city name to look up: ").strip().title()
+    data = city_data.get(city)
+    if data:
+        print(f"{city} coordinates: {data['coords']}")
+    else:
+        print("No data available for that city.")
+
+
+def add_interest():
+    interest = input("Enter a new interest (e.g. hiking): ").strip().lower()
+    user_interests.add(interest)
+    print("Updated interests:", user_interests)
+
+
+def recommend_city():
+    print("\nChecking which cities match your interests...")
+    if not itinerary:
+        print("Your itinerary is empty. Add a city first.")
+        return
+
+    for city in itinerary:
+        data = city_data.get(city)
+        if not data:
+            print(f"{city}: no data found (this shouldn't happen now).")
+            continue
+
+        match = user_interests.intersection(data["tags"])   # SET intersection
+        if match:
+            print(f"{city}: matches on {match}")
+        else:
+            print(f"{city}: no strong match (city tags: {data['tags']})")
+
+
+def get_valid_int(prompt, min_value=1):
+    while True:
+        value = input(prompt).strip()
+        if value.isdigit() and int(value) >= min_value:
+            return int(value)
+        print(f"Please enter a whole number of at least {min_value}.")
+
+
+def book_hotel():
+    city = input("Enter city to book a hotel for: ").strip().title()
+
+    if city not in itinerary:
+        print(f"{city} is not in your itinerary yet. Add it first (option 2).")
+        return
+
+    data = city_data[city]
+    existing = data["booking"]
+    if existing:
+        print(f"{city} already has a booking:")
+        print(existing)
+        confirm = input("Overwrite this booking? (y/n): ").strip().lower()
+        if confirm != "y":
+            print("Booking not changed.")
+            return
+
+    hotel_name = input("Hotel name: ").strip().title()
+    check_in = input("Check-in date (DD-MM-YYYY): ").strip()
+    check_out = input("Check-out date (DD-MM-YYYY): ").strip()
+    nights = get_valid_int("Number of nights: ")
+    guests = get_valid_int("Number of guests: ")
+
+    print("Room types: 1) Standard  2) Deluxe  3) Suite")
+    room_choice = input("Choose room type (1/2/3): ").strip()
+    room_prices = {"1": ("Standard", 2000), "2": ("Deluxe", 3500), "3": ("Suite", 6000)}
+    room_type, price_per_night = room_prices.get(room_choice, ("Standard", 2000))
+
+    total_cost = price_per_night * nights
+
+    if total_cost > data["budget"]:
+        print(f"\nWarning: Total cost ₹{total_cost} exceeds your budget of ₹{data['budget']} for {city}.")
+        proceed = input("Book anyway? (y/n): ").strip().lower()
+        if proceed != "y":
+            print("Booking cancelled.")
+            return
+
+    data["booking"] = {
+        "hotel_name": hotel_name,
+        "check_in": check_in,
+        "check_out": check_out,
+        "nights": nights,
+        "guests": guests,
+        "room_type": room_type,
+        "price_per_night": price_per_night,
+        "total_cost": total_cost,
+        "status": "Confirmed",
+    }
+
+    print(f"\nBooking confirmed for {city}!")
+    print(data["booking"])
+
+
+def check_booking_status():
+    city = input("Enter city to check booking status: ").strip().title()
+    data = city_data.get(city)
+
+    if not data:
+        print(f"No data found for {city}.")
+        return
+
+    booking = data["booking"]
+    if booking is None:
+        print(f"{city}: No hotel booked yet.")
+    else:
+        print(f"\n{city} Booking Status: {booking['status']}")
+        for key, value in booking.items():
+            print(f"  {key}: {value}")
+
+
+def show_summary():
+    print("\n--- Trip Summary ---")
+    if not itinerary:
+        print("Itinerary is empty.")
+        return
+
+    for city in itinerary:
+        data = city_data.get(city)
+        if not data:
+            print(f"{city}: No data found")
+            continue
+
+        match = user_interests.intersection(data["tags"])
+        booking = data["booking"]
+
+        line = f"{city}: Budget ₹{data['budget']} | Matches: {match or 'none'}"
+        if booking:
+            line += (f" | {booking['hotel_name']} ({booking['room_type']}), "
+                      f"{booking['nights']} nights, Total ₹{booking['total_cost']}, "
+                      f"Status: {booking['status']}")
+        else:
+            line += " | Hotel not booked"
+        print(line)
+
+
+# -------------------------------------------------------
+# Menu loop
+# -------------------------------------------------------
+
+def main():
+    while True:
+        print("\n===== TripBuddy Menu =====")
+        print("1. Show itinerary")
+        print("2. Add a city")
+        print("3. Remove a city")
+        print("4. Show city coordinates")
+        print("5. Add an interest")
+        print("6. Get city recommendations")
+        print("7. Book a hotel")
+        print("8. Check booking status")
+        print("9. Show trip summary")
+        print("10. Exit")
+
+        choice = input("Choose an option (1-10): ").strip()
+
+        actions = {
+            "1": show_itinerary,
+            "2": add_city,
+            "3": remove_city,
+            "4": show_coordinates,
+            "5": add_interest,
+            "6": recommend_city,
+            "7": book_hotel,
+            "8": check_booking_status,
+            "9": show_summary,
+        }
+
+        if choice == "10":
+            print("Goodbye! Safe travels.")
+            break
+        elif choice in actions:
+            actions[choice]()
+        else:
+            print("Invalid choice, please enter a number from 1-10.")
+
+
+if __name__ == "__main__":
+    main()
+
+
+================================================================================================================
+

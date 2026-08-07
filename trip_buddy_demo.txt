@@ -3,15 +3,6 @@ tripbuddy_agent_interactive.py
 """
 TripBuddy - Menu Driven Version (Unified City Data)
 ------------------------------------------------------------
-FIX: Previously city coordinates, city tags, and trip/booking
-status lived in THREE separate dictionaries, all keyed by city
-name. If you added a new city, it was easy to forget to add it
-to one of them -> recommendations or lookups would silently break.
-
-Now there is ONE dictionary: `city_data`, keyed by city name.
-Each city's tuple (coordinates), set (tags), and booking info
-all live together under that one key. This guarantees a city
-and its interests/tags are always properly linked.
 """
 
 # -------------------------------------------------------

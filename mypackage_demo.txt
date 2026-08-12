@@ -1,0 +1,84 @@
+Packages:
+========
+By default : pycache is getting created
+pycache - performance
+
+Level1: main is outside the package
+mypackage/module1.py:
+===================
+# module1.py - a simple module inside "mypackage"
+
+def add(a, b):
+    """Return the sum of a and b."""
+    return a + b
+
+
+def subtract(a, b):
+    """Return the difference of a and b."""
+    return a - b
+
+mypackage/module2.py:
+
+# module2.py - another module inside "mypackage"
+# It uses module1 INTERNALLY (inside the package) to show that
+# modules within a package can depend on each other.
+
+from . import module1   # relative import - "inside package" usage
+
+
+def add_and_double(a, b):
+    """Add a and b using module1, then double the result."""
+    total = module1.add(a, b)   # module1 used here, inside the package
+    return total * 2
+
+
+def multiply(a, b):
+    """Return the product of a and b."""
+    return a * b
+
+
+main.py:
+
+# main.py - lives OUTSIDE the "mypackage" package.
+# It imports and uses both module1 and module2 from the outside.
+
+from mypackage import module1
+from mypackage import module2
+
+if __name__ == "__main__":
+    # Using module1 directly, from outside the package
+    print("module1.add(2, 3) =", module1.add(2, 3))
+    print("module1.subtract(10, 4) =", module1.subtract(10, 4))
+
+    # Using module2, which internally used module1 inside the package
+    print("module2.add_and_double(2, 3) =", module2.add_and_double(2, 3))
+    print("module2.multiply(6, 7) =", module2.multiply(6, 7))
+
+
+To execute: python main.py
+
+========================================================================
+Level2:  Place main.py inside the package:
+
+main.py:
+=======
+
+from . import module1
+from . import module2
+
+if __name__ == "__main__":
+    # Using module1 directly, from outside the package
+    print("module1.add(2, 3) =", module1.add(2, 3))
+    print("module1.subtract(10, 4) =", module1.subtract(10, 4))
+
+    # Using module2, which internally used module1 inside the package
+    print("module2.add_and_double(2, 3) =", module2.add_and_double(2, 3))
+    print("module2.multiply(6, 7) =", module2.multiply(6, 7))
+
+=========================================================================
+To execute:
+python3 -m mypackage.main
+==========================================================================
+
+
+

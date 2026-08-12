@@ -1,0 +1,23 @@
+Python Requirement : Identify built in tool support 
+=========================================
+Tool1: Black, autopep8 - formatting 
+
+Tool2: Ruff, pycodestyle((style only) — spacing/blank-line rules, no logic checks), pylint((full — style, logic, naming, design, docstrings)  - Code Styles
+
+Tool3: Ruff, pylint, flake8((style + logic, since it wraps both)) - linter
+
+Tool4: Radon (code complexity)
+
+Tool5: Scalene, py-spy, Memray - (performance)
+
+Tool6: Bandit - (Security and Vulnerability)
+
+Tool7: MyPy - (Static code analysis)
+
+Tool8: pyflakes - (logic only) — unused imports/vars, no style opinions)
+
+Tool9: Code coverage PyTest
+==========================================
+Tool10: Code Rabbit - AI-powered code review tool
+=========================================
+

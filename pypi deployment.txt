@@ -1,0 +1,124 @@
+Use PyPI to
+Manage
+Build
+Publish your custom package
+===========================================
+
+1. create a folder in d drive, pypi_demo
+2. uv init --lib ramsitapackage-demo
+3. src/ramsitapackage_demo/__init__.py
+make it empty file
+4. create src/ramsitapackage_demo/encryption_demo.py
+
+import hashlib
+
+# Global variable
+stored_name = None
+
+
+def generate_encrypted_text(name: str) -> str:
+    global stored_name
+    stored_name = name
+
+    return hashlib.sha256(name.encode("utf-8")).hexdigest()
+
+
+def validate_name(encrypted_text: str) -> str:
+    global stored_name
+
+    if stored_name is None:
+        return "Error: No name stored."
+
+    regenerated_hash = hashlib.sha256(
+        stored_name.encode("utf-8")
+    ).hexdigest()
+
+    if regenerated_hash == encrypted_text:
+        return stored_name
+
+    return "Error: Invalid encrypted text."
+
+
+# Generate
+name = input("Enter Name: ")
+encrypted = generate_encrypted_text(name)
+
+print("\nEncrypted Text:")
+print(encrypted)
+
+# Validate
+user_encrypted = input("\nPaste Encrypted Text: ")
+
+result = validate_name(user_encrypted)
+print("\nResult:", result)
+
+5. uv add cryptography
+6. uv run python -m ramsitapackage_demo.encryption_demo
+7.  uv build
+ensure dist folder is created with two files
+ensure the following
+successfully built ...tar.gz
+successfully built ..whl
+
+8. register to https://pypi.org/
+with two factor authentication
+and login name -> Account settings
+generate api token and copy the token
+9. go to your project directory
+uv publish --username __token__ --password <paste your token>
+Publishing 2 files to https://upload.pypi.org/legacy/
+uploading .whl
+uploading .gz
+
+10. go and verify in portal 
+Your account-> Your projects -> Active Projects
+===========================================
+Testing:
+create another folder in d:, consume_package
+11. uv init
+12. uv add <deployed package name> # refer portal for exact name
+13. main.py
+from ramsitapackage_demo import  encryption_demo
+
+def main():
+    print("This is the main function of consumepackage.")
+    encrypted_message = encryption_demo.generate_encrypted_text("Hello, World!")
+    print(f"Encrypted message: {encrypted_message}")
+  
+
+if __name__ == "__main__":
+    main()
+14. uv run main.py
+==========================================
+
+uv pip show ramsitapackage-demo
+
+
+main.py:
+
+from ramsitapackage_demo import encryption_demo
+
+print(dir(encryption_demo))
+
+==========================================	
+import inspect
+from ramsitapackage_demo import encryption_demo
+
+for name, obj in inspect.getmembers(encryption_demo):
+    if not name.startswith("__"):
+        print(f"{name:20} {type(obj).__name__}")
+
+==========================================
+
+from ramsitapackage_demo.encryption_demo import generate_encrypted_text
+
+def main():
+    print("This is the main function of consumepackage.")
+    encrypted_message = generate_encrypted_text("Hello, World!")
+    print(f"Encrypted message: {encrypted_message}")
+
+if __name__ == "__main__":
+    main()  
+=========================================
+ 
+
